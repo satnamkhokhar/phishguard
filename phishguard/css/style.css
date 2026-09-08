@@ -1,0 +1,100 @@
+/*
+    PhishGuard Color Palette
+
+    Dark Navy:      #0B1120
+    Navy:           #111827
+    Slate Gray:     #1F2937
+    Light Gray:     #CBD5E1
+    Off White:      #F8FAFC
+    Security Green: #22C55E
+
+    Font Palette:
+    Headings: Arial, Helvetica, sans-serif
+    Body Text: Arial, Helvetica, sans-serif
+*/
+
+
+/* General page styling */
+body {
+    background-color: #0B1120;
+    color: #CBD5E1;
+    font-family: Arial, Helvetica, sans-serif;
+
+    margin: 0;
+    padding: 0;
+}
+
+
+/* Header */
+header {
+    background-color: #111827;
+
+    padding: 20px;
+    text-align: center;
+}
+
+
+/* Main site title */
+h1 {
+    color: #22C55E;
+}
+
+
+/* Section headings */
+h2 {
+    color: #F8FAFC;
+}
+
+
+/* Navigation links */
+nav a {
+    color: #CBD5E1;
+
+    margin: 0 10px;
+
+    text-decoration: none;
+}
+
+
+/* Changes link color when hovering */
+nav a:hover {
+    color: #22C55E;
+}
+
+
+/* Main content area */
+main {
+    max-width: 800px;
+
+    margin: 40px auto;
+
+    padding: 20px;
+}
+
+
+/* Paragraph styling */
+p {
+    color: #CBD5E1;
+
+    line-height: 1.6;
+}
+
+
+/* Social media links */
+a {
+    color: #22C55E;
+}
+
+
+/* Footer */
+footer {
+    background-color: #111827;
+
+    color: #CBD5E1;
+
+    text-align: center;
+
+    padding: 15px;
+
+    margin-top: 40px;
+}

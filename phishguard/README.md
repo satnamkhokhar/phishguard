@@ -1,0 +1,2 @@
+# PhishGuard
+PhishGuard is a web-based application designed to help users identify potentially suspicious or malicious website links. The goal of the application is to make it easier for everyday internet users to recognize common warning signs associated with phishing websites and understand why a link may be considered suspicious.
