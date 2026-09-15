@@ -98,3 +98,41 @@ footer {
 
     margin-top: 40px;
 }
+
+/*
+    Flexbox layout for the About page.
+
+    display: flex creates the Flexbox layout.
+    flex-wrap allows the sections to move onto a second row.
+    gap adds spacing between each section.
+*/
+.about-layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+
+/*
+    Each section takes up roughly half of the available
+    space, creating a two-column layout.
+*/
+.about-box {
+    flex: 1 1 40%;
+}
+
+
+/*
+    Responsive layout for smaller screens.
+
+    When the screen is 700px wide or smaller,
+    each section takes the full width and the
+    layout becomes a single column.
+*/
+@media (max-width: 700px) {
+
+    .about-box {
+        flex: 1 1 100%;
+    }
+
+}
