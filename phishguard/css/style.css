@@ -1,25 +1,59 @@
 /*
-    PhishGuard Color Palette
+    PhishGuard Color Themes
 
+    The website uses CSS variables so the colors can be
+    changed between the default dark theme and a light theme.
+
+    Dark Theme:
     Dark Navy:      #0B1120
     Navy:           #111827
-    Slate Gray:     #1F2937
     Light Gray:     #CBD5E1
     Off White:      #F8FAFC
     Security Green: #22C55E
 
-    Font Palette:
-    Headings: Arial, Helvetica, sans-serif
-    Body Text: Arial, Helvetica, sans-serif
+    Font:
+    Arial, Helvetica, sans-serif
 */
+
+
+/*
+    Default Dark Theme
+
+    These CSS variables are used throughout the stylesheet.
+    Because the dark theme is the default, they are defined
+    inside :root.
+*/
+:root {
+    --background-color: #0B1120;
+    --header-color: #111827;
+    --text-color: #CBD5E1;
+    --heading-color: #F8FAFC;
+    --accent-color: #22C55E;
+    --button-text-color: #0B1120;
+}
+
+
+/*
+    Alternate Light Theme
+
+    When JavaScript adds the light-theme class to the body,
+    these variables replace the default dark theme colors.
+*/
+.light-theme {
+    --background-color: #F8FAFC;
+    --header-color: #E2E8F0;
+    --text-color: #334155;
+    --heading-color: #0F172A;
+    --accent-color: #16A34A;
+    --button-text-color: #F8FAFC;
+}
 
 
 /* General page styling */
 body {
-    background-color: #0B1120;
-    color: #CBD5E1;
+    background-color: var(--background-color);
+    color: var(--text-color);
     font-family: Arial, Helvetica, sans-serif;
-
     margin: 0;
     padding: 0;
 }
@@ -27,8 +61,7 @@ body {
 
 /* Header */
 header {
-    background-color: #111827;
-
+    background-color: var(--header-color);
     padding: 20px;
     text-align: center;
 }
@@ -36,74 +69,83 @@ header {
 
 /* Main site title */
 h1 {
-    color: #22C55E;
+    color: var(--accent-color);
 }
 
 
 /* Section headings */
 h2 {
-    color: #F8FAFC;
+    color: var(--heading-color);
 }
 
 
 /* Navigation links */
 nav a {
-    color: #CBD5E1;
-
+    color: var(--text-color);
     margin: 0 10px;
-
     text-decoration: none;
 }
 
 
-/* Changes link color when hovering */
+/* Changes navigation link color when hovering */
 nav a:hover {
-    color: #22C55E;
+    color: var(--accent-color);
+}
+
+
+/*
+    Theme toggle button.
+
+    JavaScript will use this button to switch between
+    the dark and light themes.
+*/
+#theme-toggle {
+    background-color: var(--accent-color);
+    color: var(--button-text-color);
+    border: none;
+    padding: 8px 14px;
+    margin-left: 10px;
+    cursor: pointer;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 
 /* Main content area */
 main {
     max-width: 800px;
-
     margin: 40px auto;
-
     padding: 20px;
 }
 
 
 /* Paragraph styling */
 p {
-    color: #CBD5E1;
-
+    color: var(--text-color);
     line-height: 1.6;
 }
 
 
-/* Social media links */
+/* General link styling */
 a {
-    color: #22C55E;
+    color: var(--accent-color);
 }
 
 
 /* Footer */
 footer {
-    background-color: #111827;
-
-    color: #CBD5E1;
-
+    background-color: var(--header-color);
+    color: var(--text-color);
     text-align: center;
-
     padding: 15px;
-
     margin-top: 40px;
 }
+
 
 /*
     Flexbox layout for the About page.
 
     display: flex creates the Flexbox layout.
-    flex-wrap allows the sections to move onto a second row.
+    flex-wrap allows sections to move onto another row.
     gap adds spacing between each section.
 */
 .about-layout {
@@ -115,7 +157,7 @@ footer {
 
 /*
     Each section takes up roughly half of the available
-    space, creating a two-column layout.
+    space to create a two-column layout.
 */
 .about-box {
     flex: 1 1 40%;
@@ -126,8 +168,7 @@ footer {
     Responsive layout for smaller screens.
 
     When the screen is 700px wide or smaller,
-    each section takes the full width and the
-    layout becomes a single column.
+    each section takes the full width of the page.
 */
 @media (max-width: 700px) {
 
