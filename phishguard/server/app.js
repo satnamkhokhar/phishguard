@@ -1,0 +1,488 @@
+
+/*
+    PhishGuard - Node.js Backend
+
+    This server handles:
+    1. Serving the PhishGuard website
+    2. User registration with MySQL
+    3. Password hashing and login verification
+    4. Login sessions and protected pages
+    5. User logout
+*/
+
+// Load environment variables from the .env file
+require("dotenv").config();
+
+// Import required modules
+const express = require("express");
+const mysql = require("mysql2/promise");
+const crypto = require("crypto");
+const path = require("path");
+const session = require("express-session");
+
+// Create the Express application
+const app = express();
+const PORT = 3000;
+
+// Allow Express to read submitted HTML form data
+app.use(express.urlencoded({ extended: false }));
+
+/*
+    SESSION CONFIGURATION
+
+    Sessions remember whether a user has logged in.
+    The session secret is stored privately in .env.
+*/
+
+// Ensure the session secret is configured
+if (!process.env.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET is missing from server/.env");
+}
+
+// Configure login sessions
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: false
+    }
+}));
+
+/*
+    AUTHENTICATION MIDDLEWARE
+
+    Protect pages from visitors who have not logged in.
+*/
+
+// Check whether the user has an active login session
+function requireLogin(req, res, next) {
+    if (req.session.userId) {
+        return next();
+    }
+
+    // Redirect unauthenticated visitors to Login
+    return res.redirect("/login.html");
+}
+
+/*
+    WEBSITE ROUTES
+
+    Serve the existing PhishGuard pages and frontend files.
+    Do not expose private server files or database credentials.
+*/
+
+// Serve the existing CSS and JavaScript folders
+app.use("/css", express.static(path.join(__dirname, "..", "css")));
+app.use("/js", express.static(path.join(__dirname, "..", "js")));
+
+// Open Login first, or Home if the user is already logged in
+app.get("/", (req, res) => {
+    if (req.session.userId) {
+        return res.redirect("/index.html");
+    }
+
+    return res.redirect("/login.html");
+});
+
+// Protect the PhishGuard homepage
+app.get("/index.html", requireLogin, (req, res) => {
+    res.sendFile(path.join(__dirname, "..", "index.html"));
+});
+
+// Protect the About page
+app.get("/about.html", requireLogin, (req, res) => {
+    res.sendFile(path.join(__dirname, "..", "about.html"));
+});
+
+// Serve the registration page
+app.get("/register.html", (req, res) => {
+    if (req.session.userId) {
+        return res.redirect("/index.html");
+    }
+
+    res.sendFile(path.join(__dirname, "public", "register.html"));
+});
+
+// Serve the login page
+app.get("/login.html", (req, res) => {
+    if (req.session.userId) {
+        return res.redirect("/index.html");
+    }
+
+    res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
+/*
+    DATABASE CONNECTION
+
+    Use the existing MySQL database credentials
+    stored in the .env file.
+*/
+
+// Create a MySQL connection pool
+const pool = mysql.createPool({
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT || 3306),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+});
+
+/*
+    PASSWORD SECURITY
+
+    Generate salted password hashes using Node.js crypto.
+    Plain-text passwords are never stored in MySQL.
+*/
+
+// Generate a password hash with the supplied salt
+function hashPassword(password, salt) {
+    return crypto.scryptSync(password, salt, 64).toString("hex");
+}
+
+/*
+    RESPONSE PAGE
+
+    Display registration and login messages using
+    the existing PhishGuard layout and theme.
+*/
+
+// Generate a styled response page
+function responsePage(message, link, linkText) {
+    return `
+        <!DOCTYPE html>
+        <html lang="en">
+
+        <head>
+            <!-- Basic page settings -->
+            <meta charset="UTF-8">
+            <meta name="viewport"
+                  content="width=device-width, initial-scale=1.0">
+
+            <title>PhishGuard</title>
+
+            <!-- Use the existing PhishGuard stylesheet -->
+            <link rel="stylesheet" href="/css/style.css">
+        </head>
+
+        <body>
+
+            <!-- Shared PhishGuard header -->
+            <header>
+                <h1>PhishGuard</h1>
+
+                <nav>
+                    <a href="/login.html">Login</a>
+                    <a href="/register.html">Register</a>
+
+                    <!-- Existing dark/light theme toggle -->
+                    <button id="theme-toggle">Light Mode</button>
+                </nav>
+            </header>
+
+            <!-- Display the registration or login result -->
+            <main>
+                <section class="auth-container">
+                    <h2>${message}</h2>
+
+                    <!-- Link to the next page -->
+                    <p>
+                        <a href="${link}">${linkText}</a>
+                    </p>
+                </section>
+            </main>
+
+            <!-- Shared website footer -->
+            <footer>
+                <p>&copy; 2026 PhishGuard</p>
+            </footer>
+
+            <!-- Existing theme switcher -->
+            <script src="/js/theme.js"></script>
+
+        </body>
+        </html>
+    `;
+}
+
+/*
+    REGISTRATION ENDPOINT
+
+    Validate registration information, hash the password,
+    and save the new user in the MySQL users table.
+*/
+
+app.post("/register", async (req, res) => {
+
+    // Retrieve the submitted registration information
+    const { username, email, password } = req.body;
+
+    // Validate all required registration fields
+    if (
+        typeof username !== "string" ||
+        typeof email !== "string" ||
+        typeof password !== "string" ||
+        !username.trim() ||
+        !email.trim() ||
+        username.length > 100 ||
+        email.length > 150 ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+        password.length < 8
+    ) {
+        return res.status(400).send(
+            responsePage(
+                "Please enter valid registration information.",
+                "/register.html",
+                "Back to Registration"
+            )
+        );
+    }
+
+    try {
+        // Generate a random salt for the password
+        const salt = crypto.randomBytes(16).toString("hex");
+
+        // Hash the submitted password
+        const hashedPassword = hashPassword(password, salt);
+
+        // Store the salt and hash together
+        const storedPassword = `${salt}:${hashedPassword}`;
+
+        // Insert the new user into the existing MySQL table
+        const sql = `
+            INSERT INTO users (name, username, email, password_hash)
+            VALUES (?, ?, ?, ?)
+        `;
+
+        // Execute the parameterized SQL query
+        await pool.execute(sql, [
+            username.trim(),
+            username.trim(),
+            email.trim(),
+            storedPassword
+        ]);
+
+        // Display the required registration success message
+        return res.send(
+            responsePage(
+                "You have successfully registered",
+                "/login.html",
+                "Go to Login"
+            )
+        );
+
+    } catch (error) {
+
+        // Handle duplicate usernames or email addresses
+        if (error.code === "ER_DUP_ENTRY") {
+            return res.status(409).send(
+                responsePage(
+                    "This username or email is already registered.",
+                    "/register.html",
+                    "Try Again"
+                )
+            );
+        }
+
+        // Log unexpected database errors
+        console.error("Registration error:", error);
+
+        return res.status(500).send(
+            responsePage(
+                "Registration failed. Please try again.",
+                "/register.html",
+                "Back to Registration"
+            )
+        );
+    }
+});
+
+/*
+    LOGIN ENDPOINT
+
+    Verify the submitted username and password.
+    Create a session only after successful authentication.
+*/
+
+app.post("/login", async (req, res) => {
+
+    // Retrieve the submitted login credentials
+    const { username, password } = req.body;
+
+    // Display the required incorrect credentials message
+    function loginFailed() {
+        return res.status(401).send(
+            responsePage(
+                "The login credentials were incorrect",
+                "/login.html",
+                "Back to Login"
+            )
+        );
+    }
+
+    // Reject missing or invalid login information
+    if (
+        typeof username !== "string" ||
+        typeof password !== "string" ||
+        !username ||
+        !password
+    ) {
+        return loginFailed();
+    }
+
+    try {
+        // Retrieve the user ID and stored password hash
+        const sql = `
+            SELECT id, password_hash
+            FROM users
+            WHERE username = ?
+        `;
+
+        const [rows] = await pool.execute(sql, [username]);
+
+        // Reject unknown users or accounts without a password
+        if (rows.length === 0 || !rows[0].password_hash) {
+            return loginFailed();
+        }
+
+        // Separate the stored salt and password hash
+        const parts = rows[0].password_hash.split(":");
+
+        // Reject an invalid password hash format
+        if (parts.length !== 2) {
+            return loginFailed();
+        }
+
+        const [salt, storedHash] = parts;
+
+        // Check the stored hash format
+        if (
+            !/^[a-f0-9]{32}$/i.test(salt) ||
+            !/^[a-f0-9]{128}$/i.test(storedHash)
+        ) {
+            return loginFailed();
+        }
+
+        // Hash the entered password using the stored salt
+        const calculatedHash = hashPassword(password, salt);
+
+        // Convert hashes into buffers for secure comparison
+        const storedBuffer = Buffer.from(storedHash, "hex");
+        const calculatedBuffer = Buffer.from(calculatedHash, "hex");
+
+        // Reject incorrect passwords
+        if (
+            storedBuffer.length !== calculatedBuffer.length ||
+            !crypto.timingSafeEqual(storedBuffer, calculatedBuffer)
+        ) {
+            return loginFailed();
+        }
+
+        /*
+            SUCCESSFUL LOGIN
+
+            Create a fresh session and save the user ID.
+            The user can now access Home and About.
+        */
+
+        req.session.regenerate((sessionError) => {
+
+            // Handle session creation errors
+            if (sessionError) {
+                console.error("Session error:", sessionError);
+
+                return res.status(500).send(
+                    responsePage(
+                        "Unable to start login session.",
+                        "/login.html",
+                        "Back to Login"
+                    )
+                );
+            }
+
+            // Store the authenticated user's ID
+            req.session.userId = rows[0].id;
+
+            // Save the session before sending the response
+            req.session.save((saveError) => {
+
+                // Handle session saving errors
+                if (saveError) {
+                    console.error("Session save error:", saveError);
+
+                    return res.status(500).send(
+                        responsePage(
+                            "Unable to save login session.",
+                            "/login.html",
+                            "Back to Login"
+                        )
+                    );
+                }
+
+                // Display the required successful login message
+                return res.send(
+                    responsePage(
+                        "You have logged in successfully",
+                        "/index.html",
+                        "Go to PhishGuard"
+                    )
+                );
+            });
+        });
+
+    } catch (error) {
+
+        // Log unexpected login errors
+        console.error("Login error:", error);
+
+        return res.status(500).send(
+            responsePage(
+                "Login failed. Please try again later.",
+                "/login.html",
+                "Back to Login"
+            )
+        );
+    }
+});
+
+/*
+    LOGOUT ENDPOINT
+
+    Destroy the current login session and redirect
+    the user back to the login page.
+*/
+
+app.post("/logout", (req, res) => {
+
+    // Destroy the current session
+    req.session.destroy((error) => {
+
+        // Handle logout errors
+        if (error) {
+            console.error("Logout error:", error);
+
+            return res.status(500).send(
+                "Unable to log out."
+            );
+        }
+
+        // Remove the session cookie from the browser
+        res.clearCookie("connect.sid");
+
+        // Return the user to Login
+        return res.redirect("/login.html");
+    });
+});
+
+/*
+    START SERVER
+
+    Start PhishGuard on port 3000.
+*/
+
+app.listen(PORT, () => {
+    console.log(`PhishGuard running at http://localhost:${PORT}`);
+});

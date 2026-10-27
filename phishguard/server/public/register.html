@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Basic page settings -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Title displayed in the browser tab -->
+    <title>Register | PhishGuard</title>
+
+    <!-- Use the same stylesheet as the existing website -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- Shared PhishGuard header and navigation -->
+    <header>
+        <h1>PhishGuard</h1>
+
+        <nav>
+            <a href="/login.html">Login</a>
+            <a href="/register.html">Register</a>
+
+            <!-- Dark/light theme toggle -->
+            <button id="theme-toggle">Light Mode</button>
+        </nav>
+    </header>
+
+    <!-- Main registration content -->
+    <main>
+        <section class="auth-container">
+
+            <h2>Create an Account</h2>
+            <p>Register to get started with PhishGuard.</p>
+
+            <!-- Send registration details to the Node.js backend -->
+            <form action="/register" method="POST">
+
+                <!-- Username input -->
+                <label for="username">Username</label>
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    maxlength="100"
+                    required
+                >
+
+                <!-- Email input -->
+                <label for="email">Email</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    maxlength="150"
+                    required
+                >
+
+                <!-- Password input -->
+                <label for="password">Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    minlength="8"
+                    required
+                >
+
+                <!-- Submit registration information -->
+                <button type="submit">Register</button>
+            </form>
+
+            <!-- Link to the login page -->
+            <p class="auth-link">
+                Already have an account?
+                <a href="login.html">Log in</a>
+            </p>
+
+        </section>
+    </main>
+
+    <!-- Shared website footer -->
+    <footer>
+        <p>&copy; 2026 PhishGuard</p>
+    </footer>
+
+    <!-- Reuse the existing theme switcher -->
+    <script src="js/theme.js"></script>
+
+</body>
+</html>

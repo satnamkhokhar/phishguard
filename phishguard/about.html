@@ -19,13 +19,18 @@
     <header>
         <h1>PhishGuard</h1>
 
-        <!-- Navigation links between pages -->
+        <!-- Navigation links -->
         <nav>
             <a href="index.html">Home</a>
             <a href="about.html">About</a>
 
-            <!-- Button used to switch between dark and light themes -->
+            <!-- Dark/light theme toggle -->
             <button id="theme-toggle">Light Mode</button>
+
+            <!-- Logout button -->
+            <form action="/logout" method="POST" class="logout-form">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
         </nav>
     </header>
 
