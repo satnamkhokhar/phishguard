@@ -19,19 +19,22 @@
     <header>
         <h1>PhishGuard</h1>
 
-        <!-- Navigation links -->
+        <!-- Navigation links for authenticated users -->
         <nav>
-            <a href="index.html">Home</a>
-            <a href="about.html">About</a>
+            <!-- Existing website pages -->
+            <a href="/index.html">Home</a>
+            <a href="/about.html">About</a>
 
-            <!-- Dark/light theme toggle -->
+            <!-- New profile page displaying the session username -->
+            <a href="/profile">Profile</a>
+
+            <!-- Logout link that destroys the session -->
+            <a href="/logout">Logout</a>
+
+            <!-- Existing dark/light theme toggle -->
             <button id="theme-toggle">Light Mode</button>
-
-            <!-- Logout button -->
-            <form action="/logout" method="POST" class="logout-form">
-                <button type="submit" class="logout-button">Logout</button>
-            </form>
         </nav>
+
     </header>
 
     <!-- Main content of the home page -->

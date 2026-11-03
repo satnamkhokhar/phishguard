@@ -97,6 +97,99 @@ app.get("/about.html", requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, "..", "about.html"));
 });
 
+/*
+    PROFILE ENDPOINT
+
+    Display the logged-in user's username using
+    the information stored in their session.
+*/
+
+// Escape special HTML characters before displaying a username
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (character) => {
+        const entities = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        };
+
+        return entities[character];
+    });
+}
+
+// Only authenticated users can access their profile
+app.get("/profile", requireLogin, (req, res) => {
+
+    // Retrieve the username from the active session
+    const username = escapeHtml(req.session.username || "");
+
+    // Display the username on a PhishGuard-styled page
+    return res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+
+        <head>
+            <!-- Basic page settings -->
+            <meta charset="UTF-8">
+            <meta name="viewport"
+                  content="width=device-width, initial-scale=1.0">
+
+            <title>My Profile | PhishGuard</title>
+
+            <!-- Reuse the existing website stylesheet -->
+            <link rel="stylesheet" href="/css/style.css">
+        </head>
+
+        <body>
+
+            <!-- Shared PhishGuard header -->
+            <header>
+                <h1>PhishGuard</h1>
+
+                <!-- Navigation for authenticated users -->
+                <nav>
+                    <a href="/index.html">Home</a>
+                    <a href="/about.html">About</a>
+                    <a href="/profile">Profile</a>
+                    <a href="/logout">Logout</a>
+
+                    <!-- Existing theme toggle -->
+                    <button id="theme-toggle">Light Mode</button>
+                </nav>
+            </header>
+
+            <!-- Profile information -->
+            <main>
+                <section class="auth-container">
+
+                    <h2>My Profile</h2>
+
+                    <!-- Username retrieved from the session -->
+                    <p>Welcome, <strong>${username}</strong>!</p>
+
+                    <p>
+                        You are successfully logged in
+                        to PhishGuard.
+                    </p>
+
+                </section>
+            </main>
+
+            <!-- Shared website footer -->
+            <footer>
+                <p>&copy; 2026 PhishGuard</p>
+            </footer>
+
+            <!-- Existing theme functionality -->
+            <script src="/js/theme.js"></script>
+
+        </body>
+        </html>
+    `);
+});
+
 // Serve the registration page
 app.get("/register.html", (req, res) => {
     if (req.session.userId) {
@@ -334,9 +427,9 @@ app.post("/login", async (req, res) => {
     }
 
     try {
-        // Retrieve the user ID and stored password hash
+        // Retrieve the user ID, username, and password hash
         const sql = `
-            SELECT id, password_hash
+            SELECT id, username, password_hash
             FROM users
             WHERE username = ?
         `;
@@ -403,8 +496,9 @@ app.post("/login", async (req, res) => {
                 );
             }
 
-            // Store the authenticated user's ID
+            // Store the authenticated user's ID and username in the session
             req.session.userId = rows[0].id;
+            req.session.username = rows[0].username;
 
             // Save the session before sending the response
             req.session.save((saveError) => {
@@ -476,6 +570,36 @@ app.post("/logout", (req, res) => {
         return res.redirect("/login.html");
     });
 });
+
+/*
+    LOGOUT LINK ENDPOINT
+
+    Allows users to log out by clicking a link
+    that points to /logout.
+*/
+
+app.get("/logout", (req, res) => {
+
+    // Destroy the user's current session
+    req.session.destroy((error) => {
+
+        // Handle errors when destroying the session
+        if (error) {
+            console.error("Logout error:", error);
+
+            return res.status(500).send(
+                "Unable to log out."
+            );
+        }
+
+        // Clear the session cookie from the browser
+        res.clearCookie("connect.sid");
+
+        // Redirect the user to the login page
+        return res.redirect("/login.html");
+    });
+});
+
 
 /*
     START SERVER
