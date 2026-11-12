@@ -1,13 +1,21 @@
+
 {
-  "name": "server",
+  "name": "phishguard-server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Backend server for the PhishGuard phishing URL awareness application",
+  "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app.js",
+    "dev": "node --watch app.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "phishguard",
+    "phishing",
+    "cybersecurity",
+    "express",
+    "mysql"
+  ],
+  "author": "Satnam Singh Khokhar",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
