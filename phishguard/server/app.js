@@ -208,6 +208,7 @@ app.post("/analyze", requireLogin, (req, res) => {
                         <a href="/about.html">About</a>
                         <a href="/analyze">Analyze</a>
                         <a href="/profile">Profile</a>
+                        <a href="/history">History</a>
                         <a href="/logout">Logout</a>
 
                         <button id="theme-toggle">
@@ -278,10 +279,30 @@ app.post("/analyze", requireLogin, (req, res) => {
                     </section>
 
                     <div class="analysis-actions">
-                        <a href="/analyze"
-                           class="analyze-again">
+
+                        <!-- Save the URL through a protected POST route -->
+                        <form action="/scans" method="POST"
+                            class="save-scan-form">
+
+                            <input
+                                type="hidden"
+                                name="url"
+                                value="${safeURL}"
+                            >
+
+                            <button type="submit" class="analyze-button">
+                                Save Scan
+                            </button>
+                        </form>
+
+                        <a href="/analyze" class="analyze-again">
                             Analyze Another URL
                         </a>
+
+                        <a href="/history" class="analyze-again">
+                            View Scan History
+                        </a>
+
                     </div>
 
                 </main>
@@ -357,6 +378,394 @@ app.post("/analyze", requireLogin, (req, res) => {
 });
 
 /*
+    CREATE SCAN
+
+    Save a URL analysis to MySQL.
+
+    Security:
+    - Login is required.
+    - User ID comes from the server session.
+    - The URL is analyzed again on the server.
+    - SQL parameters prevent SQL injection.
+*/
+app.post("/scans", requireLogin, async (req, res) => {
+
+    let result;
+
+    // Validate and analyze the submitted URL
+    try {
+        result = analyzeURL(req.body.url);
+    } catch (error) {
+        return res.status(400).send(
+            "Invalid URL. Please return to the analyzer."
+        );
+    }
+
+    try {
+
+        // Save the complete analysis for the logged-in user
+        const sql = `
+            INSERT INTO scans
+                (user_id, url, hostname, risk_score,
+                 classification, summary, indicators)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const values = [
+            req.session.userId,
+            result.url,
+            result.hostname,
+            result.score,
+            result.classification,
+            result.summary,
+            JSON.stringify(result.indicators)
+        ];
+
+        const [insertResult] = await pool.execute(sql, values);
+
+        // Redirect to the newly saved scan's detail page
+        return res.redirect(`/scans/${insertResult.insertId}`);
+
+    } catch (error) {
+
+        console.error("Save scan error:", error);
+
+        return res.status(500).send(
+            "Unable to save scan. Please try again."
+        );
+    }
+});
+
+/*
+    READ SCAN HISTORY
+
+    Retrieve only the scans belonging to
+    the authenticated user.
+*/
+app.get("/history", requireLogin, async (req, res) => {
+
+    try {
+
+        // Never retrieve scans without filtering by user_id
+        const sql = `
+            SELECT id, url, hostname, risk_score,
+                   classification, created_at
+            FROM scans
+            WHERE user_id = ?
+            ORDER BY created_at DESC, id DESC
+        `;
+
+        const [scans] = await pool.execute(
+            sql,
+            [req.session.userId]
+        );
+
+        // Generate a row for each saved scan
+        const rowsHTML = scans.map((scan) => {
+
+            const safeURL = escapeHtml(scan.url);
+            const safeClassification = escapeHtml(
+                scan.classification
+            );
+
+            const savedDate = new Date(
+                scan.created_at
+            ).toLocaleString();
+
+            return `
+                <tr>
+                    <td class="history-url">${safeURL}</td>
+                    <td>${scan.risk_score}/100</td>
+                    <td>${safeClassification}</td>
+                    <td>${escapeHtml(savedDate)}</td>
+                    <td>
+                        <a href="/scans/${scan.id}">
+                            View Details
+                        </a>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+        // Display a helpful message when no scans exist
+        const historyContent = scans.length === 0
+            ? `
+                <div class="empty-history">
+                    <h2>No Saved Scans Yet</h2>
+                    <p>
+                        Analyze a URL and click Save Scan
+                        to start building your history.
+                    </p>
+                    <a href="/analyze"
+                       class="analyze-again">
+                        Analyze a URL
+                    </a>
+                </div>
+              `
+            : `
+                <div class="history-table-wrapper">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>URL</th>
+                                <th>Score</th>
+                                <th>Classification</th>
+                                <th>Saved At</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHTML}
+                        </tbody>
+                    </table>
+                </div>
+              `;
+
+        return res.send(`
+            <!DOCTYPE html>
+            <html lang="en">
+
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport"
+                      content="width=device-width, initial-scale=1.0">
+                <title>Scan History | PhishGuard</title>
+                <link rel="stylesheet"
+                      href="/css/style.css">
+            </head>
+
+            <body>
+                <header>
+                    <h1>PhishGuard</h1>
+
+                    <nav>
+                        <a href="/index.html">Home</a>
+                        <a href="/about.html">About</a>
+                        <a href="/analyze">Analyze</a>
+                        <a href="/profile">Profile</a>
+                        <a href="/history">History</a>
+                        <a href="/logout">Logout</a>
+                        <button id="theme-toggle">
+                            Light Mode
+                        </button>
+                    </nav>
+                </header>
+
+                <main>
+                    <section class="analysis-header">
+                        <h2>My Scan History</h2>
+                        <p>
+                            View the URL analyses you
+                            have saved to PhishGuard.
+                        </p>
+                    </section>
+
+                    ${historyContent}
+                </main>
+
+                <footer>
+                    <p>&copy; 2026 PhishGuard</p>
+                </footer>
+
+                <script src="/js/theme.js"></script>
+            </body>
+            </html>
+        `);
+
+    } catch (error) {
+
+        console.error("Scan history error:", error);
+
+        return res.status(500).send(
+            "Unable to load scan history."
+        );
+    }
+});
+
+/*
+    READ INDIVIDUAL SCAN
+
+    Display a previously saved analysis.
+
+    Security:
+    The SQL query checks both the scan ID
+    and the currently authenticated user ID.
+*/
+app.get("/scans/:id", requireLogin, async (req, res) => {
+
+    // Only accept positive integer scan IDs
+    const scanId = req.params.id;
+
+    if (!/^[1-9]\d*$/.test(scanId)) {
+        return res.status(404).send("Scan not found.");
+    }
+
+    try {
+
+        // Only retrieve scans owned by the current user
+        const sql = `
+            SELECT id, url, hostname, risk_score,
+                   classification, summary, indicators,
+                   created_at
+            FROM scans
+            WHERE id = ? AND user_id = ?
+        `;
+
+        const [rows] = await pool.execute(
+            sql,
+            [scanId, req.session.userId]
+        );
+
+        // Return the same response for missing or unowned scans
+        if (rows.length === 0) {
+            return res.status(404).send("Scan not found.");
+        }
+
+        const scan = rows[0];
+
+        // mysql2 normally parses MySQL JSON columns automatically
+        const indicators = typeof scan.indicators === "string"
+            ? JSON.parse(scan.indicators)
+            : scan.indicators;
+
+        // Choose the appropriate risk styling
+        const riskClass = scan.classification === "High Risk"
+            ? "risk-high"
+            : scan.classification === "Moderate Risk"
+                ? "risk-moderate"
+                : "risk-low";
+
+        // Display the stored analysis indicators
+        const indicatorsHTML = indicators.map((item) => `
+            <div class="indicator-item ${
+                item.detected
+                    ? "indicator-warning"
+                    : "indicator-clear"
+            }">
+                <div class="indicator-heading">
+                    <strong>${escapeHtml(item.name)}</strong>
+                    <span>
+                        ${item.detected ? "Flagged" : "Not flagged"}
+                    </span>
+                </div>
+
+                <p>${escapeHtml(item.explanation)}</p>
+            </div>
+        `).join("");
+
+        return res.send(`
+            <!DOCTYPE html>
+            <html lang="en">
+
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport"
+                      content="width=device-width, initial-scale=1.0">
+                <title>Saved Scan | PhishGuard</title>
+                <link rel="stylesheet"
+                      href="/css/style.css">
+            </head>
+
+            <body>
+                <header>
+                    <h1>PhishGuard</h1>
+
+                    <nav>
+                        <a href="/index.html">Home</a>
+                        <a href="/about.html">About</a>
+                        <a href="/analyze">Analyze</a>
+                        <a href="/profile">Profile</a>
+                        <a href="/history">History</a>
+                        <a href="/logout">Logout</a>
+                        <button id="theme-toggle">
+                            Light Mode
+                        </button>
+                    </nav>
+                </header>
+
+                <main class="analysis-page">
+
+                    <section class="analysis-header">
+                        <h2>Saved Scan #${scan.id}</h2>
+                        <p>
+                            Analysis saved on
+                            ${escapeHtml(
+                                new Date(
+                                    scan.created_at
+                                ).toLocaleString()
+                            )}
+                        </p>
+                    </section>
+
+                    <section class="result-card ${riskClass}">
+                        <h2>${escapeHtml(scan.classification)}</h2>
+
+                        <p class="result-score">
+                            ${scan.risk_score}/100
+                        </p>
+
+                        <p>${escapeHtml(scan.summary)}</p>
+
+                        <p class="result-url">
+                            <strong>URL:</strong>
+                            <span>${escapeHtml(scan.url)}</span>
+                        </p>
+
+                        <p>
+                            <strong>Hostname:</strong>
+                            ${escapeHtml(scan.hostname)}
+                        </p>
+                    </section>
+
+                    <section class="result-details">
+                        <h2>Saved Analysis Details</h2>
+                        ${indicatorsHTML}
+                    </section>
+
+                    <section class="analyzer-notice">
+                        <h2>About This Result</h2>
+                        <p>
+                            This is the analysis stored when
+                            the scan was saved. It is a
+                            heuristic assessment, not a
+                            guarantee of website safety.
+                        </p>
+                    </section>
+
+                    <div class="analysis-actions">
+                        <a href="/history"
+                           class="analyze-again">
+                            Back to History
+                        </a>
+                        <a href="/analyze"
+                           class="analyze-again">
+                            Analyze Another URL
+                        </a>
+                    </div>
+
+                </main>
+
+                <footer>
+                    <p>&copy; 2026 PhishGuard</p>
+                </footer>
+
+                <script src="/js/theme.js"></script>
+            </body>
+            </html>
+        `);
+
+    } catch (error) {
+
+        console.error("Saved scan error:", error);
+
+        return res.status(500).send(
+            "Unable to load the saved scan."
+        );
+    }
+});
+
+
+/*
     PROFILE ENDPOINT
 
     Display the logged-in user's username using
@@ -413,6 +822,7 @@ app.get("/profile", requireLogin, (req, res) => {
                     <a href="/about.html">About</a>
                     <a href="/analyze">Analyze</a>
                     <a href="/profile">Profile</a>
+                    <a href="/history">History</a>
                     <a href="/logout">Logout</a>
 
                     <!-- Existing theme toggle -->

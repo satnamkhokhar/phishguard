@@ -488,3 +488,93 @@ footer {
     }
 }
 
+/*
+    Part 3 - Saved Scan History
+*/
+
+/* Keep result actions aligned and spaced */
+.analysis-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* Keep the save form inline with navigation actions */
+.save-scan-form {
+    display: inline-block;
+    margin: 0;
+}
+
+/* Match the Save Scan button with existing action links */
+.save-scan-form .analyze-button {
+    margin: 0;
+}
+
+/* Allow wide tables to scroll on small screens */
+.history-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 10px;
+}
+
+/* Scan history table */
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--header-color);
+}
+
+/* Table headers and cells */
+.history-table th,
+.history-table td {
+    padding: 14px;
+    border-bottom: 1px solid var(--text-color);
+    text-align: left;
+    vertical-align: top;
+}
+
+/* Table header styling */
+.history-table th {
+    color: var(--heading-color);
+}
+
+/* Prevent long URLs from overflowing */
+.history-url {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 260px;
+}
+
+/* Highlight a row when hovered */
+.history-table tbody tr:hover {
+    background-color: var(--background-color);
+}
+
+/* Empty history state */
+.empty-history {
+    background-color: var(--header-color);
+    border-radius: 12px;
+    padding: 35px;
+    text-align: center;
+}
+
+/* Space the empty-state action below the text */
+.empty-history .analyze-again {
+    margin-top: 15px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 700px) {
+    .history-table th,
+    .history-table td {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .analysis-actions {
+        flex-direction: column;
+    }
+}
+
