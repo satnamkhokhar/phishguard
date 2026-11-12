@@ -19,6 +19,7 @@ const mysql = require("mysql2/promise");
 const crypto = require("crypto");
 const path = require("path");
 const session = require("express-session");
+const { analyzeURL } = require("./services/urlAnalyzer");
 
 // Create the Express application
 const app = express();
@@ -98,6 +99,264 @@ app.get("/about.html", requireLogin, (req, res) => {
 });
 
 /*
+    URL ANALYZER PAGE
+
+    Only authenticated users can access the
+    URL analysis form.
+*/
+app.get("/analyze", requireLogin, (req, res) => {
+
+    // Serve the existing analyzer HTML page
+    return res.sendFile(
+        path.join(__dirname, "views", "analyze.html")
+    );
+});
+
+/*
+    URL ANALYSIS ENDPOINT
+
+    Receives a submitted URL, analyzes it using
+    the rule-based engine, and displays the results.
+
+    This route requires an authenticated session.
+    No scan data is saved to MySQL in Part 2.
+*/
+app.post("/analyze", requireLogin, (req, res) => {
+
+    try {
+
+        // Analyze the URL submitted by the user
+        const result = analyzeURL(req.body.url);
+
+        // Escape user-controlled values before inserting them into HTML
+        const safeURL = escapeHtml(result.url);
+        const safeHostname = escapeHtml(result.hostname);
+
+        // Escape analysis values before displaying them
+        const safeClassification = escapeHtml(result.classification);
+        const safeSummary = escapeHtml(result.summary);
+
+        // Choose a CSS class based on the calculated score
+        let riskClass = "risk-low";
+
+        if (result.classification === "Moderate Risk") {
+            riskClass = "risk-moderate";
+        } else if (result.classification === "High Risk") {
+            riskClass = "risk-high";
+        }
+
+        /*
+            Generate HTML for each risk indicator.
+
+            All displayed strings are escaped to prevent
+            user input from becoming executable HTML.
+        */
+        const indicatorsHTML = result.indicators.map((item) => {
+
+            const name = escapeHtml(item.name);
+            const explanation = escapeHtml(item.explanation);
+
+            const statusClass = item.detected
+                ? "indicator-warning"
+                : "indicator-clear";
+
+            const statusText = item.detected
+                ? "Flagged"
+                : "Not flagged";
+
+            return `
+                <div class="indicator-item ${statusClass}">
+                    <div class="indicator-heading">
+                        <strong>${name}</strong>
+                        <span>${statusText}</span>
+                    </div>
+
+                    <p>${explanation}</p>
+                </div>
+            `;
+
+        }).join("");
+
+        /*
+            Send the results page.
+
+            This uses the same CSS stylesheet and
+            dark/light theme as the rest of PhishGuard.
+        */
+        return res.send(`
+            <!DOCTYPE html>
+            <html lang="en">
+
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport"
+                      content="width=device-width, initial-scale=1.0">
+
+                <title>Analysis Results | PhishGuard</title>
+
+                <link rel="stylesheet"
+                      href="/css/style.css">
+            </head>
+
+            <body>
+
+                <header>
+                    <h1>PhishGuard</h1>
+
+                    <nav>
+                        <a href="/index.html">Home</a>
+                        <a href="/about.html">About</a>
+                        <a href="/analyze">Analyze</a>
+                        <a href="/profile">Profile</a>
+                        <a href="/logout">Logout</a>
+
+                        <button id="theme-toggle">
+                            Light Mode
+                        </button>
+                    </nav>
+                </header>
+
+                <main class="analysis-page">
+
+                    <section class="analysis-header">
+                        <h2>URL Analysis Results</h2>
+                        <p>
+                            Review the URL characteristics
+                            detected by PhishGuard.
+                        </p>
+                    </section>
+
+                    <!-- Overall risk assessment -->
+                    <section class="result-card ${riskClass}">
+
+                        <h2>${safeClassification}</h2>
+
+                        <p class="result-score">
+                            ${result.score}/100
+                        </p>
+
+                        <p>${safeSummary}</p>
+
+                        <p class="result-url">
+                            <strong>Analyzed URL:</strong>
+                            <span>${safeURL}</span>
+                        </p>
+
+                        <p>
+                            <strong>Hostname:</strong>
+                            ${safeHostname}
+                        </p>
+                    </section>
+
+                    <!-- Explainable indicator details -->
+                    <section class="result-details">
+
+                        <h2>Analysis Details</h2>
+
+                        ${indicatorsHTML}
+
+                    </section>
+
+                    <!-- Interpretation notice -->
+                    <section class="analyzer-notice">
+
+                        <h2>Important Note</h2>
+
+                        <p>
+                            This result is based on URL
+                            characteristics only. A low
+                            score does not guarantee safety,
+                            and a high score does not prove
+                            the website is malicious.
+                        </p>
+
+                        <p>
+                            PhishGuard does not visit the
+                            website or inspect its content.
+                        </p>
+
+                    </section>
+
+                    <div class="analysis-actions">
+                        <a href="/analyze"
+                           class="analyze-again">
+                            Analyze Another URL
+                        </a>
+                    </div>
+
+                </main>
+
+                <footer>
+                    <p>&copy; 2026 PhishGuard</p>
+                </footer>
+
+                <script src="/js/theme.js"></script>
+
+            </body>
+            </html>
+        `);
+
+    } catch (error) {
+
+        /*
+            Handle invalid input without exposing
+            unexpected internal server errors.
+        */
+        if (error instanceof Error &&
+            [
+                "Please enter a URL.",
+                "The URL must be 2048 characters or fewer.",
+                "The URL must start with http:// or https://.",
+                "Please enter a valid website URL.",
+                "The URL must contain a valid hostname.",
+                "Only HTTP and HTTPS URLs are supported.",
+                "URLs containing embedded usernames or passwords are not supported."
+            ].includes(error.message)) {
+
+            return res.status(400).send(`
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport"
+                          content="width=device-width, initial-scale=1.0">
+                    <title>Invalid URL | PhishGuard</title>
+                    <link rel="stylesheet"
+                          href="/css/style.css">
+                </head>
+                <body>
+                    <header>
+                        <h1>PhishGuard</h1>
+                    </header>
+
+                    <main>
+                        <section class="auth-container">
+                            <h2>Unable to Analyze URL</h2>
+                            <p>${escapeHtml(error.message)}</p>
+                            <p>
+                                <a href="/analyze">
+                                    Back to Analyzer
+                                </a>
+                            </p>
+                        </section>
+                    </main>
+
+                    <script src="/js/theme.js"></script>
+                </body>
+                </html>
+            `);
+        }
+
+        // Log unexpected errors for debugging
+        console.error("URL analysis error:", error);
+
+        return res.status(500).send(
+            "Unable to analyze the URL at this time."
+        );
+    }
+});
+
+/*
     PROFILE ENDPOINT
 
     Display the logged-in user's username using
@@ -152,6 +411,7 @@ app.get("/profile", requireLogin, (req, res) => {
                 <nav>
                     <a href="/index.html">Home</a>
                     <a href="/about.html">About</a>
+                    <a href="/analyze">Analyze</a>
                     <a href="/profile">Profile</a>
                     <a href="/logout">Logout</a>
 

@@ -278,3 +278,213 @@ footer {
 .logout-button:hover {
     color: var(--accent-color);
 }
+
+/*
+    PhishGuard URL Analyzer Styling
+
+    Reuses the existing dark/light theme variables.
+*/
+
+/* Introductory text above the analyzer form */
+.analyzer-intro {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+/* Analyzer form container */
+.analyzer-card {
+    background-color: var(--header-color);
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+}
+
+/* Label above the URL input */
+.analyzer-card label {
+    display: block;
+    margin: 20px 0 10px;
+    font-weight: bold;
+}
+
+/* URL input field */
+.analyzer-card input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 14px;
+    border-radius: 6px;
+    border: 1px solid var(--text-color);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 16px;
+}
+
+/* Text below the URL field */
+.input-help {
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+/* Client-side validation errors */
+.form-error {
+    color: #EF4444;
+    font-size: 14px;
+    min-height: 20px;
+}
+
+/* Analyze button */
+.analyze-button {
+    display: inline-block;
+    padding: 13px 22px;
+    margin-top: 12px;
+    border: none;
+    border-radius: 6px;
+    background-color: var(--accent-color);
+    color: var(--button-text-color);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.analyze-button:hover {
+    opacity: 0.9;
+}
+
+/* Explanation section */
+.analyzer-notice {
+    background-color: var(--header-color);
+    padding: 25px;
+    border-radius: 12px;
+    margin-top: 30px;
+}
+
+/*
+    URL Analysis Results
+*/
+
+/* Page heading */
+.analysis-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+/* Overall result card */
+.result-card {
+    padding: 30px;
+    border-radius: 12px;
+    background-color: var(--header-color);
+    border-left: 5px solid var(--accent-color);
+}
+
+/* Low-risk result */
+.risk-low {
+    border-left-color: #22C55E;
+}
+
+/* Moderate-risk result */
+.risk-moderate {
+    border-left-color: #EAB308;
+}
+
+/* High-risk result */
+.risk-high {
+    border-left-color: #EF4444;
+}
+
+/* Large numeric risk score */
+.result-score {
+    font-size: 42px;
+    font-weight: bold;
+    color: var(--heading-color);
+    margin: 15px 0;
+}
+
+/* Display submitted URLs without overflowing */
+.result-url span {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* Results detail section */
+.result-details {
+    margin-top: 35px;
+}
+
+/* Each individual analysis indicator */
+.indicator-item {
+    background-color: var(--header-color);
+    padding: 18px 20px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border-left: 4px solid var(--accent-color);
+}
+
+/* Highlight flagged indicators */
+.indicator-warning {
+    border-left-color: #EAB308;
+}
+
+/* Highlight unflagged indicators */
+.indicator-clear {
+    border-left-color: #22C55E;
+}
+
+/* Indicator heading and status */
+.indicator-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Status text */
+.indicator-heading span {
+    font-size: 13px;
+    font-weight: bold;
+}
+
+/* Spacing around explanation text */
+.indicator-item p {
+    margin-bottom: 0;
+}
+
+/* Analyze another URL link */
+.analysis-actions {
+    text-align: center;
+    margin-top: 35px;
+}
+
+.analyze-again {
+    display: inline-block;
+    background-color: var(--accent-color);
+    color: var(--button-text-color);
+    text-decoration: none;
+    border-radius: 6px;
+    padding: 13px 22px;
+    font-weight: bold;
+}
+
+.analyze-again:hover {
+    opacity: 0.9;
+}
+
+/* Responsive layout */
+@media (max-width: 700px) {
+
+    .analyzer-card,
+    .result-card,
+    .analyzer-notice {
+        padding: 20px;
+    }
+
+    .indicator-heading {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .result-score {
+        font-size: 34px;
+    }
+}
+

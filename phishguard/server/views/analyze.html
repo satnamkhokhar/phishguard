@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Basic page configuration -->
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Analyze URL | PhishGuard</title>
+
+    <!-- Existing PhishGuard stylesheet -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+    <!-- Website header and navigation -->
+    <header>
+        <h1>PhishGuard</h1>
+
+        <nav>
+            <a href="/index.html">Home</a>
+            <a href="/about.html">About</a>
+            <a href="/analyze">Analyze</a>
+            <a href="/profile">Profile</a>
+            <a href="/logout">Logout</a>
+
+            <!-- Existing theme toggle -->
+            <button id="theme-toggle">Light Mode</button>
+        </nav>
+    </header>
+
+    <main>
+
+        <!-- Main analyzer heading -->
+        <section class="analyzer-intro">
+            <h2>URL Safety Analyzer</h2>
+
+            <p>
+                Enter a website URL to inspect common
+                phishing-related warning indicators.
+            </p>
+        </section>
+
+        <!-- Analyzer form -->
+        <section class="analyzer-card">
+
+            <h2>Analyze a URL</h2>
+
+            <form action="/analyze" method="POST"
+                  id="analyze-form">
+
+                <!-- URL input -->
+                <label for="url-input">
+                    Website URL
+                </label>
+
+                <input
+                    type="url"
+                    id="url-input"
+                    name="url"
+                    placeholder="https://example.com"
+                    maxlength="2048"
+                    required
+                >
+
+                <p class="input-help">
+                    Include http:// or https:// at the beginning.
+                </p>
+
+                <!-- Validation messages from JavaScript -->
+                <p id="url-error" class="form-error"
+                   role="alert" aria-live="polite"></p>
+
+                <button type="submit"
+                        class="analyze-button">
+                    Analyze URL
+                </button>
+            </form>
+        </section>
+
+        <!-- Important explanation about results -->
+        <section class="analyzer-notice">
+            <h2>How does this work?</h2>
+
+            <p>
+                PhishGuard checks the structure of the URL,
+                including its protocol, hostname, length,
+                suspicious wording, and other indicators.
+            </p>
+
+            <p>
+                Results are rule-based assessments and
+                cannot guarantee that a website is safe
+                or malicious.
+            </p>
+        </section>
+
+    </main>
+
+    <!-- Shared footer -->
+    <footer>
+        <p>&copy; 2026 PhishGuard</p>
+    </footer>
+
+    <!-- Existing theme functionality -->
+    <script src="/js/theme.js"></script>
+
+    <!-- Analyzer form interactions -->
+    <script src="/js/analyze.js"></script>
+
+</body>
+</html>
