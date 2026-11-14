@@ -479,9 +479,30 @@ app.get("/history", requireLogin, async (req, res) => {
                     <td>${safeClassification}</td>
                     <td>${escapeHtml(savedDate)}</td>
                     <td>
-                        <a href="/scans/${scan.id}">
-                            View Details
-                        </a>
+                        <div class="history-actions">
+
+                            <a href="/scans/${scan.id}">
+                                View Details
+                            </a>
+
+                            <a href="/scans/${scan.id}/edit">
+                                Edit
+                            </a>
+
+                            <form
+                                action="/scans/${scan.id}/delete"
+                                method="POST"
+                                class="delete-scan-form"
+                            >
+                                <button
+                                    type="submit"
+                                    class="history-delete-button"
+                                >
+                                    Delete
+                                </button>
+                            </form>
+
+                        </div>
                     </td>
                 </tr>
             `;
@@ -568,6 +589,7 @@ app.get("/history", requireLogin, async (req, res) => {
                 </footer>
 
                 <script src="/js/theme.js"></script>
+                <script src="/js/scanActions.js"></script>
             </body>
             </html>
         `);
@@ -731,16 +753,41 @@ app.get("/scans/:id", requireLogin, async (req, res) => {
                             guarantee of website safety.
                         </p>
                     </section>
-
+                    
+                    <!-- Actions for this saved scan -->
                     <div class="analysis-actions">
-                        <a href="/history"
-                           class="analyze-again">
+
+                        <!-- UPDATE -->
+                        <a
+                            href="/scans/${scan.id}/edit"
+                            class="analyze-again"
+                        >
+                            Edit Scan
+                        </a>
+
+                        <!-- DELETE -->
+                        <form
+                            action="/scans/${scan.id}/delete"
+                            method="POST"
+                            class="delete-scan-form"
+                        >
+                            <button
+                                type="submit"
+                                class="delete-button"
+                            >
+                                Delete Scan
+                            </button>
+                        </form>
+
+                        <!-- Navigation -->
+                        <a href="/history" class="analyze-again">
                             Back to History
                         </a>
-                        <a href="/analyze"
-                           class="analyze-again">
+
+                        <a href="/analyze" class="analyze-again">
                             Analyze Another URL
                         </a>
+
                     </div>
 
                 </main>
@@ -764,7 +811,309 @@ app.get("/scans/:id", requireLogin, async (req, res) => {
     }
 });
 
+/*
+    PART 4: EDIT SCAN PAGE
 
+    Show the edit form for a saved scan.
+    Only the owner can access this page.
+*/
+app.get("/scans/:id/edit", requireLogin, async (req, res) => {
+
+    const scanId = req.params.id;
+
+    // Reject invalid scan IDs
+    if (!/^[1-9]\d*$/.test(scanId)) {
+        return res.status(404).send("Scan not found.");
+    }
+
+    try {
+
+        // Retrieve only a scan owned by the logged-in user
+        const sql = `
+            SELECT id, url, risk_score, classification
+            FROM scans
+            WHERE id = ? AND user_id = ?
+        `;
+
+        const [rows] = await pool.execute(
+            sql,
+            [scanId, req.session.userId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).send("Scan not found.");
+        }
+
+        const scan = rows[0];
+
+        return res.send(`
+            <!DOCTYPE html>
+            <html lang="en">
+
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport"
+                      content="width=device-width, initial-scale=1.0">
+
+                <title>Edit Scan | PhishGuard</title>
+
+                <link rel="stylesheet"
+                      href="/css/style.css">
+            </head>
+
+            <body>
+
+                <header>
+                    <h1>PhishGuard</h1>
+
+                    <nav>
+                        <a href="/index.html">Home</a>
+                        <a href="/about.html">About</a>
+                        <a href="/analyze">Analyze</a>
+                        <a href="/history">History</a>
+                        <a href="/profile">Profile</a>
+                        <a href="/logout">Logout</a>
+
+                        <button id="theme-toggle">
+                            Light Mode
+                        </button>
+                    </nav>
+                </header>
+
+                <main>
+
+                    <section class="analysis-header">
+                        <h2>Edit Saved Scan #${scan.id}</h2>
+
+                        <p>
+                            Update the URL and PhishGuard
+                            will calculate a new risk score.
+                        </p>
+                    </section>
+
+                    <section class="analyzer-card">
+
+                        <form
+                            action="/scans/${scan.id}/update"
+                            method="POST"
+                            id="edit-scan-form"
+                        >
+
+                            <label for="url-input">
+                                Website URL
+                            </label>
+
+                            <input
+                                type="url"
+                                id="url-input"
+                                name="url"
+                                value="${escapeHtml(scan.url)}"
+                                maxlength="2048"
+                                required
+                            >
+
+                            <p class="input-help">
+                                Include http:// or https://.
+                            </p>
+
+                            <p class="input-help">
+                                Previous score:
+                                ${scan.risk_score}/100
+                                (${escapeHtml(scan.classification)})
+                            </p>
+
+                            <p
+                                id="url-error"
+                                class="form-error"
+                                role="alert"
+                                aria-live="polite"
+                            ></p>
+
+                            <div class="edit-actions">
+
+                                <button
+                                    type="submit"
+                                    class="analyze-button"
+                                >
+                                    Update & Re-analyze
+                                </button>
+
+                                <a
+                                    href="/scans/${scan.id}"
+                                    class="analyze-again"
+                                >
+                                    Cancel
+                                </a>
+
+                            </div>
+
+                        </form>
+
+                    </section>
+
+                </main>
+
+                <footer>
+                    <p>&copy; 2026 PhishGuard</p>
+                </footer>
+
+                <script src="/js/theme.js"></script>
+
+                <!-- Reuse existing Part 2 URL validation -->
+                <script src="/js/analyze.js"></script>
+
+            </body>
+            </html>
+        `);
+
+    } catch (error) {
+
+        console.error("Edit scan page error:", error);
+
+        return res.status(500).send(
+            "Unable to load the edit page."
+        );
+    }
+});
+
+/*
+    PART 4: UPDATE SCAN
+
+    Re-analyze a submitted URL and update the
+    existing scan in MySQL.
+
+    Security:
+    - Login required
+    - Server-side URL validation
+    - Scan ownership enforced in SQL
+    - Parameterized SQL queries
+*/
+app.post("/scans/:id/update", requireLogin, async (req, res) => {
+
+    const scanId = req.params.id;
+
+    // Reject invalid IDs
+    if (!/^[1-9]\d*$/.test(scanId)) {
+        return res.status(404).send("Scan not found.");
+    }
+
+    try {
+
+        // Confirm this scan belongs to the current user
+        const [existingScans] = await pool.execute(
+            `SELECT id FROM scans
+             WHERE id = ? AND user_id = ?`,
+            [scanId, req.session.userId]
+        );
+
+        if (existingScans.length === 0) {
+            return res.status(404).send("Scan not found.");
+        }
+
+        // Recalculate all results on the server
+        let result;
+
+        try {
+            result = analyzeURL(req.body.url);
+        } catch (validationError) {
+            return res.status(400).send(
+                "Invalid URL. Please return to the edit page."
+            );
+        }
+
+        // Update the existing record, not create a new one
+        const sql = `
+            UPDATE scans
+            SET
+                url = ?,
+                hostname = ?,
+                risk_score = ?,
+                classification = ?,
+                summary = ?,
+                indicators = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ?
+        `;
+
+        const values = [
+            result.url,
+            result.hostname,
+            result.score,
+            result.classification,
+            result.summary,
+            JSON.stringify(result.indicators),
+            scanId,
+            req.session.userId
+        ];
+
+        const [updateResult] = await pool.execute(
+            sql,
+            values
+        );
+
+        // Handle a scan deleted by another request
+        if (updateResult.affectedRows === 0) {
+            return res.status(404).send("Scan not found.");
+        }
+
+        // Return to the same scan's details
+        return res.redirect(`/scans/${scanId}`);
+
+    } catch (error) {
+
+        console.error("Update scan error:", error);
+
+        return res.status(500).send(
+            "Unable to update scan. Please try again."
+        );
+    }
+});
+
+/*
+    PART 4: DELETE SCAN
+
+    Permanently delete a saved scan.
+    Only the logged-in owner can delete it.
+*/
+app.post("/scans/:id/delete", requireLogin, async (req, res) => {
+
+    const scanId = req.params.id;
+
+    // Validate the scan ID
+    if (!/^[1-9]\d*$/.test(scanId)) {
+        return res.status(404).send("Scan not found.");
+    }
+
+    try {
+
+        // Delete only scans owned by the logged-in user
+        const sql = `
+            DELETE FROM scans
+            WHERE id = ? AND user_id = ?
+        `;
+
+        const [deleteResult] = await pool.execute(
+            sql,
+            [scanId, req.session.userId]
+        );
+
+        // Return 404 if the scan does not exist or is not owned
+        if (deleteResult.affectedRows === 0) {
+            return res.status(404).send("Scan not found.");
+        }
+
+        // Return to History after successful deletion
+        return res.redirect("/history");
+
+    } catch (error) {
+
+        console.error("Delete scan error:", error);
+
+        return res.status(500).send(
+            "Unable to delete scan. Please try again."
+        );
+    }
+});
 /*
     PROFILE ENDPOINT
 

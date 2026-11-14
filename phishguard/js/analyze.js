@@ -8,7 +8,10 @@
     browser-side JavaScript can be bypassed.
 */
 
-const analyzeForm = document.getElementById("analyze-form");
+// Support both the Analyze form and the Edit Scan form
+const analyzeForm =
+    document.getElementById("analyze-form") ||
+    document.getElementById("edit-scan-form");
 const urlInput = document.getElementById("url-input");
 const errorMessage = document.getElementById("url-error");
 

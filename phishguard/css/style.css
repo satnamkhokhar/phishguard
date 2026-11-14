@@ -578,3 +578,90 @@ footer {
     }
 }
 
+/*
+    PART 4 - UPDATE AND DELETE OPERATIONS
+*/
+
+/* Layout for the edit page action buttons */
+.edit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+/* Keep the delete form aligned with other buttons */
+.delete-scan-form {
+    display: inline-block;
+    margin: 0;
+}
+
+/* Main delete button */
+.delete-button {
+    display: inline-block;
+    padding: 13px 22px;
+    border: none;
+    border-radius: 6px;
+
+    background-color: #DC2626;
+    color: #FFFFFF;
+
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+/* Hover state */
+.delete-button:hover {
+    background-color: #B91C1C;
+}
+
+/* Layout for actions in the History table */
+.history-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* Smaller Delete button inside History */
+.history-delete-button {
+    background: transparent;
+    border: 1px solid #DC2626;
+    border-radius: 5px;
+
+    color: #EF4444;
+    padding: 6px 10px;
+
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.history-delete-button:hover {
+    background-color: #DC2626;
+    color: #FFFFFF;
+}
+
+/* Responsive layout */
+@media (max-width: 700px) {
+
+    .edit-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .edit-actions button,
+    .edit-actions a {
+        text-align: center;
+    }
+
+    .history-actions {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
