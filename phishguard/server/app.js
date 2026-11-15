@@ -207,8 +207,9 @@ app.post("/analyze", requireLogin, (req, res) => {
                         <a href="/index.html">Home</a>
                         <a href="/about.html">About</a>
                         <a href="/analyze">Analyze</a>
-                        <a href="/profile">Profile</a>
+                        <a href="/dashboard">Dashboard</a>
                         <a href="/history">History</a>
+                        <a href="/profile">Profile</a>
                         <a href="/logout">Logout</a>
 
                         <button id="theme-toggle">
@@ -563,8 +564,9 @@ app.get("/history", requireLogin, async (req, res) => {
                         <a href="/index.html">Home</a>
                         <a href="/about.html">About</a>
                         <a href="/analyze">Analyze</a>
-                        <a href="/profile">Profile</a>
+                        <a href="/dashboard">Dashboard</a>
                         <a href="/history">History</a>
+                        <a href="/profile">Profile</a>
                         <a href="/logout">Logout</a>
                         <button id="theme-toggle">
                             Light Mode
@@ -696,8 +698,9 @@ app.get("/scans/:id", requireLogin, async (req, res) => {
                         <a href="/index.html">Home</a>
                         <a href="/about.html">About</a>
                         <a href="/analyze">Analyze</a>
-                        <a href="/profile">Profile</a>
+                        <a href="/dashboard">Dashboard</a>
                         <a href="/history">History</a>
+                        <a href="/profile">Profile</a>
                         <a href="/logout">Logout</a>
                         <button id="theme-toggle">
                             Light Mode
@@ -797,6 +800,7 @@ app.get("/scans/:id", requireLogin, async (req, res) => {
                 </footer>
 
                 <script src="/js/theme.js"></script>
+                <script src="/js/scanActions.js"></script>
             </body>
             </html>
         `);
@@ -870,6 +874,7 @@ app.get("/scans/:id/edit", requireLogin, async (req, res) => {
                         <a href="/index.html">Home</a>
                         <a href="/about.html">About</a>
                         <a href="/analyze">Analyze</a>
+                        <a href="/dashboard">Dashboard</a>
                         <a href="/history">History</a>
                         <a href="/profile">Profile</a>
                         <a href="/logout">Logout</a>
@@ -1114,6 +1119,189 @@ app.post("/scans/:id/delete", requireLogin, async (req, res) => {
         );
     }
 });
+
+
+/*
+    PART 5A: USER DASHBOARD
+
+    Display personalized statistics and recent scans.
+    All data belongs to the logged-in user.
+*/
+app.get("/dashboard", requireLogin, async (req, res) => {
+
+    try {
+        const userId = req.session.userId;
+        const username = escapeHtml(req.session.username || "User");
+
+        // Count the logged-in user's saved scans by risk level
+        const statsSQL = `
+            SELECT
+                COUNT(*) AS total_scans,
+                SUM(CASE WHEN classification = 'Low Risk'
+                    THEN 1 ELSE 0 END) AS low_risk,
+                SUM(CASE WHEN classification = 'Moderate Risk'
+                    THEN 1 ELSE 0 END) AS moderate_risk,
+                SUM(CASE WHEN classification = 'High Risk'
+                    THEN 1 ELSE 0 END) AS high_risk
+            FROM scans
+            WHERE user_id = ?
+        `;
+
+        const [statsRows] = await pool.execute(statsSQL, [userId]);
+        const stats = statsRows[0];
+
+        // Retrieve the five most recent scans
+        const recentSQL = `
+            SELECT id, url, risk_score, classification, created_at
+            FROM scans
+            WHERE user_id = ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT 5
+        `;
+
+        const [recentScans] = await pool.execute(recentSQL, [userId]);
+
+        // Build the recent scans table
+        const recentHTML = recentScans.length === 0
+            ? `<p>No saved scans yet. Analyze a URL to get started!</p>`
+            : `
+                <div class="history-table-wrapper">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>URL</th>
+                                <th>Risk Level</th>
+                                <th>Score</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${recentScans.map(scan => `
+                                <tr>
+                                    <td class="history-url">
+                                        ${escapeHtml(scan.url)}
+                                    </td>
+                                    <td>
+                                        ${escapeHtml(scan.classification)}
+                                    </td>
+                                    <td>${scan.risk_score}/100</td>
+                                    <td>
+                                        <a href="/scans/${scan.id}">
+                                            View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            `).join("")}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+        return res.send(`
+            <!DOCTYPE html>
+            <html lang="en">
+
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport"
+                      content="width=device-width, initial-scale=1.0">
+                <title>Dashboard | PhishGuard</title>
+                <link rel="stylesheet" href="/css/style.css">
+            </head>
+
+            <body>
+                <header>
+                    <h1>PhishGuard</h1>
+                    <nav>
+                        <a href="/index.html">Home</a>
+                        <a href="/about.html">About</a>
+                        <a href="/analyze">Analyze</a>
+                        <a href="/dashboard">Dashboard</a>
+                        <a href="/history">History</a>
+                        <a href="/profile">Profile</a>
+                        <a href="/logout">Logout</a>
+                        <button id="theme-toggle">Light Mode</button>
+                    </nav>
+                </header>
+
+                <main class="dashboard-page">
+
+                    <section class="analysis-header">
+                        <h2>Welcome back, ${username}!</h2>
+                        <p>
+                            Here's an overview of your PhishGuard activity.
+                        </p>
+                    </section>
+
+                    <section class="dashboard-stats">
+
+                        <div class="stat-card">
+                            <h3>Total Scans</h3>
+                            <p>${stats.total_scans || 0}</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>Low Risk</h3>
+                            <p>${stats.low_risk || 0}</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>Moderate Risk</h3>
+                            <p>${stats.moderate_risk || 0}</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>High Risk</h3>
+                            <p>${stats.high_risk || 0}</p>
+                        </div>
+
+                    </section>
+
+                    <section class="dashboard-recent">
+                        <h2>Recent Scans</h2>
+                        ${recentHTML}
+
+                        <div class="analysis-actions">
+                            <a href="/history" class="analyze-again">
+                                View All History
+                            </a>
+                            <a href="/analyze" class="analyze-again">
+                                Analyze New URL
+                            </a>
+                        </div>
+                    </section>
+
+                </main>
+
+                <footer>
+                    <p>&copy; 2026 PhishGuard</p>
+                </footer>
+
+                <script src="/js/theme.js"></script>
+            </body>
+            </html>
+        `);
+
+    } catch (error) {
+        console.error("Dashboard error:", error);
+        return res.status(500).send(
+            "Unable to load dashboard. Please try again."
+        );
+    }
+});
+
+/*
+    PART 5D: CURRENT USER
+
+    Return the logged-in user's username.
+    This endpoint is protected by the active session.
+*/
+app.get("/api/me", requireLogin, (req, res) => {
+    return res.json({
+        username: req.session.username || "User"
+    });
+});
+
 /*
     PROFILE ENDPOINT
 
@@ -1170,8 +1358,9 @@ app.get("/profile", requireLogin, (req, res) => {
                     <a href="/index.html">Home</a>
                     <a href="/about.html">About</a>
                     <a href="/analyze">Analyze</a>
-                    <a href="/profile">Profile</a>
+                    <a href="/dashboard">Dashboard</a>
                     <a href="/history">History</a>
+                    <a href="/profile">Profile</a>
                     <a href="/logout">Logout</a>
 
                     <!-- Existing theme toggle -->
