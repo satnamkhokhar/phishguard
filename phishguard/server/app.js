@@ -93,6 +93,11 @@ app.get("/index.html", requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, "..", "index.html"));
 });
 
+// Academy: protected educational page and interactive quiz.
+app.get("/academy", requireLogin, (req, res) => {
+    res.sendFile(path.join(__dirname, "..", "academy.html"));
+});
+
 // Protect the About page
 app.get("/about.html", requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, "..", "about.html"));
@@ -207,6 +212,7 @@ app.post("/analyze", requireLogin, (req, res) => {
                         <a href="/index.html">Home</a>
                         <a href="/about.html">About</a>
                         <a href="/analyze">Analyze</a>
+                        <a href="/academy">Academy</a>
                         <a href="/dashboard">Dashboard</a>
                         <a href="/history">History</a>
                         <a href="/profile">Profile</a>
@@ -564,6 +570,7 @@ app.get("/history", requireLogin, async (req, res) => {
                         <a href="/index.html">Home</a>
                         <a href="/about.html">About</a>
                         <a href="/analyze">Analyze</a>
+                        <a href="/academy">Academy</a>
                         <a href="/dashboard">Dashboard</a>
                         <a href="/history">History</a>
                         <a href="/profile">Profile</a>
@@ -698,6 +705,7 @@ app.get("/scans/:id", requireLogin, async (req, res) => {
                         <a href="/index.html">Home</a>
                         <a href="/about.html">About</a>
                         <a href="/analyze">Analyze</a>
+                        <a href="/academy">Academy</a>
                         <a href="/dashboard">Dashboard</a>
                         <a href="/history">History</a>
                         <a href="/profile">Profile</a>
@@ -874,6 +882,7 @@ app.get("/scans/:id/edit", requireLogin, async (req, res) => {
                         <a href="/index.html">Home</a>
                         <a href="/about.html">About</a>
                         <a href="/analyze">Analyze</a>
+                        <a href="/academy">Academy</a>
                         <a href="/dashboard">Dashboard</a>
                         <a href="/history">History</a>
                         <a href="/profile">Profile</a>
@@ -1216,6 +1225,7 @@ app.get("/dashboard", requireLogin, async (req, res) => {
                         <a href="/index.html">Home</a>
                         <a href="/about.html">About</a>
                         <a href="/analyze">Analyze</a>
+                        <a href="/academy">Academy</a>
                         <a href="/dashboard">Dashboard</a>
                         <a href="/history">History</a>
                         <a href="/profile">Profile</a>
@@ -1358,6 +1368,7 @@ app.get("/profile", requireLogin, (req, res) => {
                     <a href="/index.html">Home</a>
                     <a href="/about.html">About</a>
                     <a href="/analyze">Analyze</a>
+                    <a href="/academy">Academy</a>
                     <a href="/dashboard">Dashboard</a>
                     <a href="/history">History</a>
                     <a href="/profile">Profile</a>
