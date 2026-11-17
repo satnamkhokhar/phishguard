@@ -23,6 +23,12 @@
     Because the dark theme is the default, they are defined
     inside :root.
 */
+
+/* ==========================================
+   PART 6E - CONSISTENT COLOR THEMES
+   ========================================== */
+
+/* Default dark theme */
 :root {
     --background-color: #0B1120;
     --header-color: #111827;
@@ -30,23 +36,28 @@
     --heading-color: #F8FAFC;
     --accent-color: #22C55E;
     --button-text-color: #0B1120;
+
+    /* Additional shared colors */
+    --border-color: #334155;
+    --card-bg: #111827;
+    --hover-color: #1E293B;
 }
 
-
-/*
-    Alternate Light Theme
-
-    When JavaScript adds the light-theme class to the body,
-    these variables replace the default dark theme colors.
-*/
+/* Light theme */
 .light-theme {
     --background-color: #F8FAFC;
     --header-color: #E2E8F0;
     --text-color: #334155;
     --heading-color: #0F172A;
     --accent-color: #16A34A;
-    --button-text-color: #F8FAFC;
+    --button-text-color: #FFFFFF;
+
+    /* Additional shared colors */
+    --border-color: #CBD5E1;
+    --card-bg: #FFFFFF;
+    --hover-color: #CBD5E1;
 }
+
 
 
 /* General page styling */
@@ -721,18 +732,439 @@ footer {
     }
 }
 
-/* PART 5D - Logged-in username */
+/* ==========================================
+   PART 6A - RESPONSIVE NAVIGATION
+   ========================================== */
 
-.nav-username {
-    font-size: 14px;
-    font-weight: 600;
-    padding: 6px 10px;
-    white-space: nowrap;
-}
+/* Keep the navigation centered and consistent */
 header nav {
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     flex-wrap: wrap;
     gap: 12px;
+}
+
+/* Make navigation links easier to click */
+header nav a {
+    display: inline-block;
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+/* Highlight navigation links on hover */
+header nav a:hover {
+    background-color: var(--background-color);
+    color: var(--accent-color);
+}
+
+/* Make keyboard navigation visible */
+header nav a:focus-visible,
+#theme-toggle:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 3px;
+}
+
+/* Improve theme button appearance */
+#theme-toggle {
+    margin-left: 0;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-weight: bold;
+    min-height: 40px;
+}
+
+/* Tablet and mobile navigation */
+@media (max-width: 700px) {
+    header {
+        padding: 18px 12px;
+    }
+
+    header nav {
+        gap: 6px;
+    }
+
+    header nav a {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    #theme-toggle {
+        font-size: 14px;
+    }
+}
+
+/* Small phone screens */
+@media (max-width: 420px) {
+    header nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    header nav a {
+        text-align: center;
+        background-color: var(--background-color);
+    }
+
+    #theme-toggle {
+        grid-column: 1 / -1;
+        width: 100%;
+        margin: 0;
+    }
+}
+
+/* ==========================================
+   PART 6B - DASHBOARD UI IMPROVEMENTS
+   ========================================== */
+
+/* Dashboard heading */
+.dashboard-page .analysis-header {
+    margin-bottom: 35px;
+}
+
+.dashboard-page .analysis-header h2 {
+    font-size: clamp(26px, 4vw, 36px);
+    margin-bottom: 10px;
+}
+
+/* Improve statistic cards */
+.dashboard-page .stat-card {
+    background-color: var(--header-color);
+    border: 1px solid var(--text-color);
+    border-radius: 12px;
+    padding: 28px 20px;
+    transition: transform 0.2s ease,
+                box-shadow 0.2s ease;
+}
+
+/* Subtle hover effect */
+.dashboard-page .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Statistic labels */
+.dashboard-page .stat-card h3 {
+    color: var(--text-color);
+    font-size: 15px;
+    margin: 0 0 15px;
+}
+
+/* Statistic numbers */
+.dashboard-page .stat-card p {
+    color: var(--heading-color);
+    font-size: clamp(28px, 3vw, 38px);
+    font-weight: 700;
+}
+
+/* Recent scans section */
+.dashboard-page .dashboard-recent {
+    margin-top: 40px;
+}
+
+.dashboard-page .dashboard-recent h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+/* Improve spacing around Dashboard actions */
+.dashboard-page .analysis-actions {
+    margin-top: 30px;
+}
+
+/* Tablet adjustments */
+@media (max-width: 800px) {
+    .dashboard-page .dashboard-stats {
+        gap: 14px;
+    }
+
+    .dashboard-page .stat-card {
+        padding: 22px 15px;
+    }
+}
+
+/* Small phone adjustments */
+@media (max-width: 450px) {
+    .dashboard-page {
+        padding: 24px 15px;
+    }
+
+    .dashboard-page .dashboard-stats {
+        gap: 12px;
+        margin: 25px 0 35px;
+    }
+
+    .dashboard-page .stat-card {
+        padding: 22px 16px;
+    }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-page .stat-card {
+        transition: none;
+    }
+
+    .dashboard-page .stat-card:hover {
+        transform: none;
+    }
+}
+
+/* ==========================================
+   PART 6C - RESPONSIVE HISTORY TABLES
+   ========================================== */
+
+/* Allow tables to scroll without overflowing the page */
+.history-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+}
+
+/* Keep columns readable */
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Improve table header styling */
+.history-table th {
+    background-color: var(--header-color);
+    color: var(--heading-color);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Improve cell readability */
+.history-table td {
+    line-height: 1.5;
+}
+
+/* Keep long URLs inside their cells */
+.history-table .history-url {
+    max-width: 280px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* Keep action buttons organized */
+.history-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Visible keyboard focus */
+.history-table a:focus-visible,
+.history-table button:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 3px;
+}
+
+/* Tablet adjustments */
+@media (max-width: 800px) {
+    .history-table th,
+    .history-table td {
+        padding: 12px;
+        font-size: 14px;
+    }
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+    .history-table {
+        min-width: 620px;
+    }
+
+    .history-table th,
+    .history-table td {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .history-actions {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .history-delete-button {
+        padding: 8px 10px;
+    }
+}
+
+/* ==========================================
+   PART 6D - FORMS AND BUTTONS
+   ========================================== */
+
+/* Consistent sizing for form controls */
+input,
+textarea,
+select,
+button {
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+/* Smooth visual feedback for action buttons */
+.analyze-button,
+.analyze-again,
+.delete-button,
+.history-delete-button,
+.auth-container button {
+    transition: opacity 0.2s ease,
+                background-color 0.2s ease,
+                transform 0.2s ease;
+}
+
+/* Subtle hover feedback */
+.analyze-button:hover,
+.analyze-again:hover,
+.auth-container button:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+/* Consistent pressed state */
+.analyze-button:active,
+.analyze-again:active,
+.delete-button:active,
+.history-delete-button:active,
+.auth-container button:active {
+    transform: translateY(0);
+}
+
+/* Visible keyboard focus for form controls */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible,
+.analyze-again:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 3px;
+}
+
+/* Improve input field interaction */
+.auth-container input,
+.analyzer-card input {
+    transition: border-color 0.2s ease,
+                box-shadow 0.2s ease;
+}
+
+.auth-container input:focus,
+.analyzer-card input:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+/* Improve readability of validation messages */
+.form-error {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Disabled buttons */
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* Mobile form improvements */
+@media (max-width: 600px) {
+    .auth-container,
+    .analyzer-card {
+        padding: 20px;
+    }
+
+    .analyze-button {
+        min-height: 44px;
+    }
+
+    .analyzer-card .analyze-button {
+        width: 100%;
+    }
+}
+
+/* Respect reduced-motion settings */
+@media (prefers-reduced-motion: reduce) {
+    .analyze-button,
+    .analyze-again,
+    .delete-button,
+    .history-delete-button,
+    .auth-container button,
+    .auth-container input,
+    .analyzer-card input {
+        transition: none;
+    }
+
+    .analyze-button:hover,
+    .analyze-again:hover,
+    .auth-container button:hover {
+        transform: none;
+    }
+}
+
+/* ==========================================
+   PART 6E - THEME POLISH
+   ========================================== */
+
+/* Dashboard cards */
+.dashboard-page .stat-card {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+/* History tables */
+.history-table {
+    background-color: var(--card-bg);
+}
+
+.history-table th {
+    background-color: var(--header-color);
+}
+
+.history-table th,
+.history-table td {
+    border-bottom-color: var(--border-color);
+}
+
+/* Subtle row hover */
+.history-table tbody tr:hover {
+    background-color: var(--hover-color);
+}
+
+/* Improve card and section borders */
+.analyzer-card,
+.analyzer-notice,
+.result-card,
+.indicator-item,
+.empty-history {
+    border-color: var(--border-color);
+}
+
+/* Keep input borders consistent */
+.auth-container input,
+.analyzer-card input {
+    border-color: var(--border-color);
+}
+
+/* Improve theme toggle contrast */
+#theme-toggle {
+    font-weight: 600;
+}
+
+/* Give the browser matching form control colors */
+:root {
+    color-scheme: dark;
+}
+
+body.light-theme {
+    color-scheme: light;
 }
