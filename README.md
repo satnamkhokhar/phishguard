@@ -336,7 +336,3 @@ Additional measures would be required before production deployment, including:
 PhishGuard demonstrates the integration of frontend development, backend APIs and routes, relational databases, authentication, session management, CRUD operations, and automated testing.
 
 The project combines practical web development concepts with cybersecurity education, allowing users to analyze suspicious URLs while learning how to recognize common phishing techniques.
-
-## Author
-
-**Satnam Singh Khokhar**
