@@ -653,6 +653,10 @@ app.get("/scans/:id", requireLogin, async (req, res) => {
         }
 
         const scan = rows[0];
+        const scanNumber = await getUserScanNumber(
+            req.session.userId,
+            scan.id
+        );
 
         // mysql2 normally parses MySQL JSON columns automatically
         const indicators = typeof scan.indicators === "string"
@@ -719,7 +723,7 @@ app.get("/scans/:id", requireLogin, async (req, res) => {
                 <main class="analysis-page">
 
                     <section class="analysis-header">
-                        <h2>Saved Scan #${scan.id}</h2>
+                        <h2>Saved Scan #${scanNumber}</h2>
                         <p>
                             Analysis saved on
                             ${escapeHtml(
@@ -857,6 +861,10 @@ app.get("/scans/:id/edit", requireLogin, async (req, res) => {
         }
 
         const scan = rows[0];
+        const scanNumber = await getUserScanNumber(
+            req.session.userId,
+            scan.id
+        );
 
         return res.send(`
             <!DOCTYPE html>
@@ -897,7 +905,7 @@ app.get("/scans/:id/edit", requireLogin, async (req, res) => {
                 <main>
 
                     <section class="analysis-header">
-                        <h2>Edit Saved Scan #${scan.id}</h2>
+                        <h2>Edit Saved Scan #${scanNumber}</h2>
 
                         <p>
                             Update the URL and PhishGuard
@@ -1442,6 +1450,22 @@ const pool = mysql.createPool({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME
 });
+
+/*
+    Display-only scan number for the current user's existing scans.
+    MySQL IDs remain global, unique primary keys for CRUD routes.
+    Numbers can shift if older scans are deleted.
+*/
+async function getUserScanNumber(userId, scanId) {
+    const [rows] = await pool.execute(
+        `SELECT COUNT(*) AS scan_number
+         FROM scans
+         WHERE user_id = ? AND id <= ?`,
+        [userId, scanId]
+    );
+
+    return Number(rows[0].scan_number);
+}
 
 /*
     PASSWORD SECURITY
